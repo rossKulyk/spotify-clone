@@ -1,3 +1,6 @@
+require("dotenv").config();
+console.log("process.env.CLIENT_ID >", process.env.CLIENT_ID);
+
 const express = require("express");
 // instantiate the Express app
 const app = express();
