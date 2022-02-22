@@ -73,7 +73,6 @@ app.get("/callback", (req, res) => {
         }
     })
         .then((response) => {
-            console.log("/api/token RESPONSE.DATA > ", response.data);
             if (response.status === 200) {
                 //
                 // access token request data from Spotify API
@@ -98,27 +97,22 @@ app.get("/callback", (req, res) => {
                 //         res.send(error);
                 //     });
 
-                // testing
-                const { refresh_token } = response.data;
+                //
+                console.log("/api/token RESPONSE.DATA > ", response.data);
+                const { access_token, refresh_token } = response.data;
 
-                axios
-                    .get(
-                        `http://localhost:8080/refresh_token?refresh_token=${refresh_token}`
-                    )
-                    .then((response) => {
-                        res.send(
-                            `<pre>${JSON.stringify(
-                                response.data,
-                                null,
-                                2
-                            )}</pre>`
-                        );
-                    })
-                    .catch((error) => {
-                        res.send(error);
-                    });
+                const queryParams = querystring.stringify({
+                    access_token,
+                    refresh_token
+                });
+                console.log("/callback queryParams > ", queryParams);
+                // redirect to react app with access and refresh tokens on successful login and authorization.
+                res.redirect(`http://localhost:3000/?${queryParams}`);
             } else {
-                res.send(response);
+                // if response status != 200
+                res.redirect(
+                    `/?${querystring.stringify({ error: "invalid_token" })}`
+                );
             }
         })
         .catch((error) => {
