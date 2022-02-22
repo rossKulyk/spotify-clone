@@ -29,8 +29,7 @@ const generateRandomString = (length) => {
 // state key
 const stateKey = "spotify_auth_state";
 
-// The redirect URI is a route of our app that we want the Spotify Accounts Service to redirect the user to once they've authorized our app (i.e. successfully logged into Spotify).
-// login route to redirect to the Spotify Accounts Service with client_id, redicrect_uri
+// request authorization from Spotify
 app.get("/login", (req, res) => {
     const state = generateRandomString(16);
     res.cookie(stateKey, state);
@@ -47,15 +46,17 @@ app.get("/login", (req, res) => {
         scope: scope
     });
 
+    // redirect URI is a route of the app that we want the Spotify Accounts Service to redirect the user to once they've authorized our app
     res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
 
-// To exchange the authorization code for an access token, need to send a POST request to the Spotify Accounts Service /api/token endpoint.
+// exchange the authorization code for an access token
 app.get("/callback", (req, res) => {
     // get the authorization code from query param
     const code = req.query.code || null;
     console.log("/calback REQ.QUERY.CODE > ", code);
 
+    // request to the Spotify Accounts Service /api/token to get access token
     axios({
         method: "post",
         url: "https://accounts.spotify.com/api/token",
@@ -72,16 +73,38 @@ app.get("/callback", (req, res) => {
         }
     })
         .then((response) => {
-            console.log("/api/token RESPONSE > ", response);
+            console.log("/api/token RESPONSE.DATA > ", response.data);
             if (response.status === 200) {
-                const { access_token, token_type } = response.data;
+                //
+                // access token request data from Spotify API
+                // const { access_token, token_type } = response.data;
+
+                // axios
+                //     .get("https://api.spotify.com/v1/me", {
+                //         headers: {
+                //             Authorization: `${token_type} ${access_token}`
+                //         }
+                //     })
+                //     .then((response) => {
+                //         res.send(
+                //             `<pre>${JSON.stringify(
+                //                 response.data,
+                //                 null,
+                //                 2
+                //             )}</pre>`
+                //         );
+                //     })
+                //     .catch((error) => {
+                //         res.send(error);
+                //     });
+
+                // testing
+                const { refresh_token } = response.data;
 
                 axios
-                    .get("https://api.spotify.com/v1/me", {
-                        headers: {
-                            Authorization: `${token_type} ${access_token}`
-                        }
-                    })
+                    .get(
+                        `http://localhost:8080/refresh_token?refresh_token=${refresh_token}`
+                    )
                     .then((response) => {
                         res.send(
                             `<pre>${JSON.stringify(
@@ -97,6 +120,32 @@ app.get("/callback", (req, res) => {
             } else {
                 res.send(response);
             }
+        })
+        .catch((error) => {
+            res.send(error);
+        });
+});
+
+// request a new access token with refresh token.
+app.get("/refresh_token", (req, res) => {
+    const { refresh_token } = req.query;
+
+    axios({
+        method: "post",
+        url: "https://accounts.spotify.com/api/token",
+        data: querystring.stringify({
+            grant_type: "refresh_token",
+            refresh_token: refresh_token
+        }),
+        headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${new Buffer.from(
+                `${CLIENT_ID}:${CLIENT_SECRET}`
+            ).toString("base64")}`
+        }
+    })
+        .then((response) => {
+            res.send(response.data);
         })
         .catch((error) => {
             res.send(error);
