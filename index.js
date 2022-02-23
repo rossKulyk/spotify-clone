@@ -29,7 +29,7 @@ const generateRandomString = (length) => {
 // state key
 const stateKey = "spotify_auth_state";
 
-// request authorization from Spotify
+// 1-st Call. Request authorization from Spotify by passing client_id, scopes, reidrect_url
 app.get("/login", (req, res) => {
     const state = generateRandomString(16);
     res.cookie(stateKey, state);
@@ -50,7 +50,7 @@ app.get("/login", (req, res) => {
     res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
 });
 
-// exchange the authorization code for an access token
+// 2-nd Call. Exchange the authorization code for an access token, refresh token
 app.get("/callback", (req, res) => {
     // get the authorization code from query param
     const code = req.query.code || null;
@@ -123,6 +123,7 @@ app.get("/callback", (req, res) => {
 // request a new access token with refresh token.
 app.get("/refresh_token", (req, res) => {
     const { refresh_token } = req.query;
+    console.log("/refresh_token req.query > ", req.query);
 
     axios({
         method: "post",
@@ -139,6 +140,8 @@ app.get("/refresh_token", (req, res) => {
         }
     })
         .then((response) => {
+            console.log("/refresh_token response > ", response);
+
             res.send(response.data);
         })
         .catch((error) => {

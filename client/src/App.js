@@ -14,6 +14,17 @@ function App() {
         console.log("queryString > ", queryString);
         console.log("accessToken > ", accessToken);
         console.log("refreshToken > ", refreshToken);
+
+        if (refreshToken) {
+            fetch(`/refresh_token?refresh_token=${refreshToken}`)
+                .then((res) => {
+                    console.log("FETCH response >> ", res);
+
+                    res.json();
+                })
+                .then((data) => console.log("Fetch data >", data))
+                .catch((err) => console.error("Fetch err > ", err));
+        }
     }, []);
 
     return (
